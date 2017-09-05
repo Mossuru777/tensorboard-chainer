@@ -19,7 +19,7 @@ class name_scope(object):
     """Class that creates hierarchical names for operations and variables.
     Args:
         name (str): Name for setting namespace.
-        values (list): Variable for setting namespace.
+        values (list): Variable in the namespace.
     Example:
         You can set namespace using "with" statement.
         In the following example, no namespace is set for the variable 'X', but
@@ -28,7 +28,7 @@ class name_scope(object):
             x = chainer.Variable(...)
             with name_scope('test'):
                y = F.relu(x)
-     """
+    """
     stack = []
 
     def __init__(self, name, values=list()):
@@ -51,3 +51,18 @@ class name_scope(object):
         function.Function.__init__ = self._org_func_init
         variable.VariableNode.__init__ = self._org_val_init
         self.stack.pop(-1)
+
+def within_name_scope(name):
+    """Decorator for link class methods.
+    Args:
+        name (str): Name for setting namespace.
+    """
+    def decorator(func):
+        import functools
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            with name_scope(name, self.params()):
+                res = func(self, *args, **kwargs)
+            return res
+        return wrapper
+    return decorator
